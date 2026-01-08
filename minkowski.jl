@@ -1,14 +1,23 @@
 ### A Pluto.jl notebook ###
 # v0.20.21
 
+#> [frontmatter]
+#> title = "Minkowského suma a její uplatnění"
+#> 
+#>     [[frontmatter.author]]
+#>     name = "yoptohlejepeta"
+#>     url = "https://github.com/yoptohlejepeta/"
+
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ b2ec9c30-1fb8-46db-a7d8-bedcef046e98
+# ╔═╡ e5153d19-9d42-433c-b440-0ecb84e6b879
 begin
-	using PlutoUI, Plots, LazySets, LaTeXStrings
-	
-	PlutoUI.TableOfContents(title="Obsah", aside=true, depth=2)
+		using PlutoUI, Plots, LazySets, LaTeXStrings
+		using BenchmarkTools
+		using Test
+		
+		PlutoUI.TableOfContents(title="Obsah", aside=true, depth=3)
 end
 
 # ╔═╡ f1b83e66-be2e-11ef-33ae-7f3ad5680ea5
@@ -25,59 +34,106 @@ __Vypracoval__: Petr Kotlan
 
 # ╔═╡ 81e3bcad-e58b-47cd-994e-f00d4252e66a
 md"""
-## Teorie
+## Definice
 """
 
 # ╔═╡ b2af872b-8983-4d8f-b2a1-177ee964f21c
 md"""
-> __Definice__: Nechť $A$, $B$ $\subseteq$ $\mathbb{R}^n$ jsou dvě bodové množiny.
-> *Minkowského sumu* těchto množin značíme $A ⊕ B$ a rozumíme tím mnnožinu
+> Nechť $A$, $B$ $\subseteq$ $\mathbb{R}^2$ jsou dva konvexní polygony.
+> *Minkowského sumu* těchto polygonů značíme $C = A ⊕ B$ a rozumíme tím
 >
+> $C = A ⊕ B = \{ a + b \mid a \in A, b \in B \},$
 >
-> $A ⊕ B = \{ a + b \mid a \in A, b \in B \},$
->
-> kde $a$, $b$ značí polohové vektory bodů z $A$, $B$ a $+$ značí sčítání vektorů. [^1]
+> kde $a$, $b$ značí polohové vektory bodů z $A$, $B$ a $+$ značí sčítání vektorů.
+> $C$ je také konvexní polygon.
 """
-
-# ╔═╡ 88617a2b-1f60-4f4b-9e7c-8b716e67831b
-# md"""
-# > __Základní vlastnosti__:
-# >
-# > $A ⊕ B = B ⊕ A,$
-# >
-# > $(A ⊕ B) ⊕ C = A ⊕ (B ⊕ C),$
-# >
-# > $A ⊕ B = B ⊕ A,$
-# """
-# # Z předešlé definice, komutativity a asociativity sčítání vektorů plynou následující vlastnosti.
 
 # ╔═╡ 5b4eb235-2342-4b66-8110-1f33f4a5a2b1
 md"""
-## Implementace algoritmu
 
-__Metoda 1__:
+## Některé metody pro výpočet Minkowského sumy
 
+__Metoda 1__: První metoda je jednoduchá, ale časově náročná. Je to proces ve dvou krocích.
+1. Sečteme každý vrchol jednoho polygonu se všemi vrcholy druhého polygonu, tímto získáme množinu bodů.
+2. Najdeme její konvexní obal.
+
+Tento konvexní obal je hledanou Minkowského sumou daných dvou konvexních polygonů.
+
+"""
+
+# ╔═╡ 357468ee-0440-4f0c-be34-3e64da57c047
+md"""
+!!! info "Časová složitost první metody"
+	První krok má časovou složitost $O(|A||B|)$, kde $|A|$ a $|B|$ je počet hran polygonu $A$, resp. polygonu $B$.
+
+	Časová složitost druhého korku závisí na použitém algoritmu k nalezení knvexní obálky. V tomto dokumentu je to $O(|A||B|$ log$(|A||B|))$.
+
+"""
+
+# ╔═╡ 1c2909ab-e6ae-4da5-bc58-0d34fbcfd755
+md"""
 __Metoda 2__:
+
+Vstupem jsou polygony $A$,$B$, jejichž hrany jsou seřazeny proti směru hodinových ručiček. $C$ označujeme Minkowského sumu těchto polygonů, tvořenou souřadnicemi vrcholů. Vrcholy polygonů $A$,$B$ je nutné přerovnat tak, aby prvním vrcholem byl vrchol s nejmenší $y$-ovou souřadnicí (při rovnosti s nejmenší $x$-ovou). Takto jsou vrcholy seřazené podle polárního úhlu.
+
+Inicializujeme ukazatele $i$ a $j$, na začátku oba rovny $1$ ($i=j=1$). Opakujeme následující kroky, dokud neprojdeme všechny vrcholy obou polygonů.
+
+1. Přidej $A_i + B_i$ do $C$.
+1. Porovnej polární úhly ``\alpha=\overrightarrow{A_iA_{i+1}}`` a ``\beta=\overrightarrow{B_iB_{j+1}}``.
+   - Pokud ``\alpha>\beta``: $i+1$
+   - Pokud ``\alpha<\beta``: $j+1$
+   - Jinak: $i+1$, $j+1$
+
+Výsledkem je seznam vrcholů polygonu $C$, který je Minkowského sumou polygonů $A$ a $B$. 
+
+
+"""
+# 3.  **Výsledek**:
+#     * Výsledkem je seznam vrcholů konvexního polygonu, který již nevyžaduje další volání funkce pro konvexní obal, protože pořadí bodů je přirozeně zachováno díky řazení podle úhlů.
+
+# ╔═╡ cbb9403c-4b92-4389-9a0d-9be5da654e48
+md"""
+!!! info "Časová složitost druhé metody"
+	Na rozdíl od první metody je tento algoritmus lineární vzhledem k počtu vrcholů, tedy $O(n + m)$.
+"""
+
+# ╔═╡ e09afb18-9c76-4046-aa0b-382c36f8cc56
+md"""
+## Implementace algoritmu
 """
 
 # ╔═╡ 68004822-b2b3-47e6-9ed1-0bc75316cdca
-"""
-    angle(v_x, v_y)
+begin
+	"""
+		angle(v_x, v_y)
+	
+	Výpočet polárního úhlu vektoru podle [^2].
+	
+	Arguments:
+	- `v_x`: `x` složka vektoru.
+	- `v_y`: `y` složka vektoru.
 
-Výpočet polárního úhlu mezi vektory podle [^2].
-
-Arguments:
-- `v_x`: x složka vektoru.
-- `v_y`: y složka vektoru.
-"""
-function angle(v_x, v_y)
-  theta = atand(v_y, v_x)
-
-  if theta < 0
-    theta += 360
-  end
-
-  return theta
+	```julia
+	function angle(v_x, v_y)
+	  theta = atand(v_y, v_x)
+	
+	  if theta < 0
+		theta += 360
+	  end
+	
+	  return theta
+	end
+	```
+	"""
+	function angle(v_x, v_y)
+	  theta = atand(v_y, v_x)
+	
+	  if theta < 0
+		theta += 360
+	  end
+	
+	  return theta
+	end
 end
 
 # ╔═╡ dd22223f-0212-4f27-a383-3df2eea99ad3
@@ -88,28 +144,131 @@ Seřazení bodů polygonu podle polárního úhlu.
 
 Arguments:
 - `vertices`: Body polygonu seřazené proti směru hodinových ručiček
+
+```julia
+function reorder_vertices(vertices)
+	min_idx = argmin([(p[2], p[1]) for p in vertices])
+	return circshift(vertices, 1 - min_idx)
+end
+```
 """
 function reorder_vertices(vertices)
 	min_idx = argmin([(p[2], p[1]) for p in vertices])
 	return circshift(vertices, 1 - min_idx)
 end
 
+# ╔═╡ 9a755abc-a4d5-4f7c-9655-ec302aab19e2
+"""
+	angle_orientation(p1, p2, p3)
+
+- Úhel je orientován doleva pokud `det(M) > 0`.
+- Úhel je orientován doprava pokud `det(M) < 0`. 
+
+```julia
+function angle_orientation(p1, p2, p3)
+	v1 = p2 - p1
+	v2 = p3 - p2
+	M = [v1 v2]
+	return det(M)
+end
+```
+"""
+function angle_orientation(p1, p2, p3)
+	return (p2[1] - p1[1]) * (p3[2] - p2[2]) - (p2[2] - p1[2]) * (p3[1] - p2[1])
+end
+
+# ╔═╡ fed3d5cf-acce-48e9-b51b-03829d5a643d
+"""
+	convex_hull(points)
+
+Algoritmus pro vytvoření konvexní obálky.
+
+```julia
+function convex_hull(points)
+	H, D = [], []
+	sorted = sort(points, by = p -> (p[1], p[2]))
+
+	for b in sorted
+		while length(H) >= 2 && angle_orientation(H[end-1], H[end], b) >= 0
+            pop!(H)
+        end
+        push!(H, b)
+
+        while length(D) >= 2 && angle_orientation(D[end-1], D[end], b) <= 0
+            pop!(D)
+        end
+        push!(D, b)
+	end
+	return [H; reverse(D)]
+
+end
+```
+"""
+function convex_hull(points)
+	H, D = [], []
+	sorted = sort(points, by = p -> (p[1], p[2]))
+
+	for b in sorted
+		while length(H) >= 2 && angle_orientation(H[end-1], H[end], b) >= 0
+            pop!(H)
+        end
+        push!(H, b)
+
+        while length(D) >= 2 && angle_orientation(D[end-1], D[end], b) <= 0
+            pop!(D)
+        end
+        push!(D, b)
+	end
+
+	popfirst!(H)
+	pop!(D)
+	return [H; reverse(D)]
+
+end
+
+# ╔═╡ 7219e946-d79e-43c0-b1a3-d9d9619b5aa5
+"""
+	minkowski1(polygon1, polygon2)
+
+Algoritmus pro výpočet Minkowského sumy podle metody 1.
+
+```julia
+function minkowski1(polygon1, polygon2)
+	pq_points = [p1 + p2 for p1 in polygon1 for p2 in polygon2]
+
+	pq = convex_hull(pq_points)
+
+	return pq
+end
+```
+"""
+function minkowski1(polygon1, polygon2)
+	pq_points = [p1 + p2 for p1 in polygon1 for p2 in polygon2]
+
+	pq = convex_hull(pq_points)
+
+	return pq
+end
+
 # ╔═╡ 1c4f2968-c4cb-4183-a1d9-0382202fc8c6
 """
-    minkowski(polygon1, polygon2)
+    minkowski2(polygon1, polygon2)
 
-Arguments:
-- `polygon1`: První polygon
-- `polygon2`: Druhý polygon
-"""
-function minkowski(polygon1, polygon2)
+Algoritmus pro výpočet Minkowského sumy podle metody 2.
+
+```julia
+function minkowski2(polygon1, polygon2)
+	polygon1 = reorder_vertices(polygon1)
+	polygon2 = reorder_vertices(polygon2)
+
+	push!(polygon1, polygon1[1])
+	push!(polygon2, polygon2[1])
+	
 	pq = []
 	i, j = 1, 1
 	n, m = length(polygon1), length(polygon2)
-	@debug "n, m", n, m
 
 	while i <= n && j <= m
-		@debug i, j
 		push!(pq, polygon1[i] .+ polygon2[j])
 
 		Vp1 = (
@@ -133,25 +292,48 @@ function minkowski(polygon1, polygon2)
 			j += 1
 		end
 	end
-	@debug "stop", i, j
 
 	return pq
 end
-
-
-# ╔═╡ 202d247c-8f3c-47f0-951f-9cb26cfa44ca
-"""Pomocná funkce pro přípravu polygonu.
-
-- Přeuspořádání vrcholů.
-- Přidání prvního vrcholu nakonec.
+```
 """
-function prep(polygon)
-	polygon = reorder_vertices(polygon)
-	@info "Body polygonu: $(polygon)"
+function minkowski2(polygon1, polygon2)
+	polygon1 = reorder_vertices(polygon1)
+	polygon2 = reorder_vertices(polygon2)
 
-	push!(polygon, polygon[1])
+	push!(polygon1, polygon1[1])
+	push!(polygon2, polygon2[1])
+	
+	pq = []
+	i, j = 1, 1
+	n, m = length(polygon1), length(polygon2)
 
-	return polygon
+	while i <= n && j <= m
+		push!(pq, polygon1[i] .+ polygon2[j])
+
+		Vp1 = (
+			polygon1[mod(i, n) + 1][1] - polygon1[i][1],
+			polygon1[mod(i, n) + 1][2] - polygon1[i][2]
+		)
+		Vp2 = (
+			polygon2[mod(j, m) + 1][1] - polygon2[j][1],
+			polygon2[mod(j, m) + 1][2] - polygon2[j][2]
+		)
+
+		p1_angle = angle(Vp1...)
+		p2_angle = angle(Vp2...)
+
+		if p1_angle < p2_angle
+			i += 1
+		elseif p1_angle > p2_angle
+			j += 1
+		else
+			i += 1
+			j += 1
+		end
+	end
+
+	return pq
 end
 
 # ╔═╡ 6097a067-c38b-4e0e-be6f-e5341dd818f2
@@ -161,34 +343,33 @@ md"""
 
 # ╔═╡ b83d7ff7-c911-4e42-ba57-469fe8d7a55a
 begin
-	P = [[-1, 0], [1, -1], [0, 1]]
-	P = prep(P)
+    P = [[-1, 0], [1, -1], [0, 1]]
+    Q = [[3.8, 3], [2.6, 2.8], [2.5, 0.8], [4, 1]]
 
-	plot([point[1] for point in P], [point[2] for point in P], seriestype=:shape, legend=false, title="Polygon " * L"P", ratio=1)
-end
-
-# ╔═╡ 3bbc2db0-c047-4a97-b81e-181f3b7b50a3
-begin
-	Q = [[3.8, 3], [2.6, 2.8], [2.5, 0.8], [4, 1]]
-	Q = prep(Q)
-
-	plot([point[1] for point in Q], [point[2] for point in Q], seriestype=:shape, legend=false, title=title="Polygon " * L"Q", ratio=1)
+    example1_polygons = plot(ratio=1, title="Polygony " * L"P" * " a " * L"Q")
+    
+    plot!(example1_polygons, [p[1] for p in P], [p[2] for p in P], 
+          seriestype=:shape, label=L"P", fillalpha=0.5)
+    
+    plot!(example1_polygons, [p[1] for p in Q], [p[2] for p in Q], 
+          seriestype=:shape, label=L"Q", fillalpha=0.5)
 end
 
 # ╔═╡ 69d02369-9e4f-415b-b172-a6bb08fc829e
 begin
-	pq = minkowski(P, Q)
+	pq = minkowski2(P, Q)
+	@test sort(minkowski1(P,Q)) == sort(minkowski2(P,Q))
 	@info "Body P + Q: $pq"
 
-	plot([point[1] for point in pq], [point[2] for point in pq], seriestype=:shape, title=L"P \oplus Q", ratio=1)
+	plot([point[1] for point in pq], [point[2] for point in pq], seriestype=:shape, title=L"P \oplus Q", ratio=1, legend=false, fillalpha=0.5,fillcolor=:green )
 end
 
 # ╔═╡ 13252efa-b2ff-451e-b2cc-83393a0a85b8
 begin
-	example1 = plot(legend=false, ratio=1,title="Příklad 1 (Vlastní řešení)")
-	plot!(example1, [point[1] for point in P], [point[2] for point in P], seriestype=:shape, fillalpha=0.5, lw=2)
-	plot!(example1, [point[1] for point in Q], [point[2] for point in Q], seriestype=:shape, fillalpha=0.5, lw=2)
-	plot!(example1, [point[1] for point in pq], [point[2] for point in pq], seriestype=:shape, fillalpha=0.5, lw=2)
+	example1 = plot(ratio=1,title="Příklad 1 (Vlastní řešení)")
+	plot!(example1, [point[1] for point in P], [point[2] for point in P], seriestype=:shape, fillalpha=0.5, lw=2, label=L"P", legend=:topleft)
+	plot!(example1, [point[1] for point in Q], [point[2] for point in Q], seriestype=:shape, fillalpha=0.5, lw=2, label=L"Q")
+	plot!(example1, [point[1] for point in pq], [point[2] for point in pq], seriestype=:shape, fillalpha=0.5, lw=2, label=L"P \oplus Q")
 end
 
 # ╔═╡ de9a3400-d6b5-4dc5-94aa-782c1e5e3d8f
@@ -198,31 +379,37 @@ md"""
 
 # ╔═╡ 494ea233-6d5c-4351-a934-84d701b8ac74
 begin
-	p1 = prep([[0., 0.], [1., 0.], [0.5, 1]])
+	p1 = [[0., 0.], [1., 0.], [0.5, 1]]
+	p2 = [[1.5, 0.], [2, 1], [1, 1]]
 
-	plot([point[1] for point in p1], [point[2] for point in p1], seriestype=:shape, legend=false, title="Polygon " * L"P_1", ratio=1)
+	example2_polygons = plot(ratio=1, title="Polygony " * L"P_1" * " a " * L"P_2")
+    plot!(example2_polygons, [p[1] for p in p1], [p[2] for p in p1], 
+          seriestype=:shape, label=L"P_1", fillalpha=0.5)
+    plot!(example2_polygons, [p[1] for p in p2], [p[2] for p in p2], 
+          seriestype=:shape, label=L"P_2", fillalpha=0.5)
 end
 
 # ╔═╡ 9cdb35ec-ff72-4703-af92-b3792ef599dd
-begin
-	p2 = prep([[1.5, 0.], [2, 1], [1, 1]])
-
-	plot([point[1] for point in p2], [point[2] for point in p2], seriestype=:shape, legend=false, title="Polygon " * L"P_2", ratio=1)
-end
+# begin
+# 	p2 = [[1.5, 0.], [2, 1], [1, 1]]
+# 	plot([point[1] for point in p2], [point[2] for point in p2], seriestype=:shape, legend=false, title="Polygon " * L"P_2", ratio=1)
+# end
 
 # ╔═╡ f8eef707-7719-4010-a349-f95fabaf3e52
 begin
-	pq2 = minkowski(p1, p2)
+	pq2 = minkowski1(p1, p2)
+	@test sort(minkowski1(p1, p2)) == sort(minkowski2(p1, p2))
+	@info "Body P1 + P2: $pq2"
 
-	plot([point[1] for point in pq2], [point[2] for point in pq2], seriestype=:shape, title=L"P_1 \oplus P_2", ratio=1)
+	plot([point[1] for point in pq2], [point[2] for point in pq2], seriestype=:shape, title=L"P_1 \oplus P_2", ratio=1, label=false, fillcolor=:green, fillalpha=0.5)
 end
 
 # ╔═╡ 9ba566ef-2715-46cc-b5b1-acf4cf94446c
 begin
-	example2 = plot(legend=false, ratio=1,title="Příklad 2 (Vlastní řešení)")
-	plot!(example2, [point[1] for point in p1], [point[2] for point in p1], seriestype=:shape, fillalpha=0.5, lw=2)
-	plot!(example2, [point[1] for point in p2], [point[2] for point in p2], seriestype=:shape, fillalpha=0.5, lw=2)
-	plot!(example2, [point[1] for point in pq2], [point[2] for point in pq2], seriestype=:shape, fillalpha=0.5, lw=2)
+	example2 = plot(ratio=1,title="Příklad 2 (Vlastní řešení)")
+	plot!(example2, [point[1] for point in p1], [point[2] for point in p1], seriestype=:shape, fillalpha=0.5, lw=2, label=L"P_1", legend=:topleft)
+	plot!(example2, [point[1] for point in p2], [point[2] for point in p2], seriestype=:shape, fillalpha=0.5, lw=2, label=L"P_2")
+	plot!(example2, [point[1] for point in pq2], [point[2] for point in pq2], seriestype=:shape, fillalpha=0.5, lw=2, label=L"P_1 \oplus P_2")
 end
 
 # ╔═╡ 31582d78-4a98-47de-b631-eed3f2d6c5c1
@@ -234,7 +421,7 @@ md"""
 begin
 	polygons = [rand(VPolygon) for _ in 1:2]
 	X = MinkowskiSum(VPolygon(float.(P)), VPolygon(Q))
-	minkowski_custom = minkowski(polygons[1].vertices, polygons[2].vertices)
+	minkowski_custom = minkowski2(polygons[1].vertices, polygons[2].vertices)
 	
 	p = plot([Xi for Xi in array(X)], ratio=1, title="LazySets")
 	plot!(p, X, 1e-6, alpha=.5, seriestype=:shape, color=:red)
@@ -256,6 +443,65 @@ begin
 	plot(plot2, example2)
 end
 
+# ╔═╡ d0db2565-0624-4db3-8382-27e960fa2cdf
+md"---"
+
+# ╔═╡ e6541b15-97b4-430e-8186-a5527769c509
+md"""
+### Benchmarking metod
+"""
+
+# ╔═╡ ff4167e5-dcdd-4db6-93a3-fe6e9aeef073
+begin
+	function generate_convx_poly(n)
+	    angles = sort(2π .* rand(n))
+	    return [[cos(a), sin(a)] for a in angles]
+	end
+	
+	test_size_small = 100
+	test_size_big = 1000
+	p_small = generate_convx_poly(test_size_small)
+	q_small = generate_convx_poly(test_size_small)
+	p_big = generate_convx_poly(test_size_big)
+	q_big = generate_convx_poly(test_size_big)
+	md""
+end
+
+# ╔═╡ bb131a21-644a-4d7d-b4a1-0b3104ac29f8
+bench1_small = @benchmark minkowski1(p_small, q_small)
+
+# ╔═╡ 85fa7197-a109-4bed-8acc-661a2b5257d0
+bench2_small = @benchmark minkowski2(p_small, q_small)
+
+# ╔═╡ 09ff129f-f261-44a9-8ba2-de656d61b60a
+md"""
+| Metoda | Medián času | Alokace |
+| :--- | :--- | :--- |
+| **Metoda 1** | $(BenchmarkTools.prettytime(median(bench1_small).time)) | $(BenchmarkTools.prettymemory(median(bench1_small).memory)) |
+| **Metoda 2** | $(BenchmarkTools.prettytime(median(bench2_small).time)) | $(BenchmarkTools.prettymemory(median(bench2_small).memory)) |
+
+**Zrychlení:** $(round(median(bench1_small).time / median(bench2_small).time, digits=1))x
+"""
+
+# ╔═╡ 3a93c488-0db0-4921-9561-449ed92ce109
+md"---"
+
+# ╔═╡ 50de5752-d317-4402-9cbd-6e39ccb5a343
+bench1_big = @benchmark minkowski1(p_big, q_big)
+
+# ╔═╡ 1de51a39-fa06-49e1-8f74-8d79269d5442
+bench2_big = @benchmark minkowski2(p_big, q_big)
+
+# ╔═╡ 56213a39-c518-4d71-bed2-9b742c8858de
+md"""
+| Metoda | Medián času | Alokace |
+| :--- | :--- | :--- |
+| **Metoda 1** | $(BenchmarkTools.prettytime(median(bench1_big).time)) | $(BenchmarkTools.prettymemory(median(bench1_big).memory)) |
+| **Metoda 2** | $(BenchmarkTools.prettytime(median(bench2_big).time)) | $(BenchmarkTools.prettymemory(median(bench2_big).memory)) |
+
+**Zrychlení:** $(round(median(bench1_big).time / median(bench2_big).time, digits=1))x
+"""
+
 # ╔═╡ fdbbbcb0-ec46-49c1-9248-60b24001d0e7
 md"""
 ## Příklady využití
@@ -263,7 +509,7 @@ md"""
 
 # ╔═╡ 2d7a3e9b-92fa-4900-ad40-94fffd12581f
 md"""
-### Plánování pohybu v robotice
+__Plánování pohybu v robotice__
 [^4]
 
 Hlavní uplatnění Minkowského sumy spočívá v **automatickém hledání cest pro roboty** tak, aby se vyhnuli překážkám. Tato metoda se v robotice označuje jako řešení „Piano mover’s problem“.
@@ -282,25 +528,23 @@ Minkowského suma figuruje při tvorbě tzv. **konfiguračního prostoru**:
 
 # ╔═╡ 1596de13-534b-4caf-89d9-5bc58a34c9ba
 md"""
-### NC obrábění (Numerical Control Machining)
+__NC obrábění (Numerical Control Machining)__
 * **K čemu to slouží:** K programování pohybu obráběcích nástrojů při opracování materiálu.
 * **Kde figuruje Minkowského suma:** Programování NC nástrojů využívá poznatku, že Minkowského suma řezného nástroje a jeho trajektorie přesně definuje výsledný tvar řezu v materiálu.
 
-
-
-### 3D modelování pevných těles (Solid Modeling)
+__3D modelování pevných těles (Solid Modeling)__
 * **K čemu to slouží:** K vytváření složitých 3D objektů v CAD softwarech, jako je například OpenSCAD.
 * **Kde figuruje Minkowského suma:** Slouží k ohraničení (obtáhnutí) jednoho tvaru jiným tvarem, čímž vzniká složený (kompozitní) objekt tvořený spojením obou původních tvarů.
 
 
 
-### Detekce kolizí (Physics Engines)
+__Detekce kolizí (Physics Engines)__
 * **K čemu to slouží:** K určení, zda do sebe narážejí konvexní obaly objektů ve fyzikálních simulacích a hrách.
 * **Kde figuruje Minkowského suma:** Minkowského sumy, a specificky Minkowského rozdíly, se využívají společně s algoritmy GJK k efektivnímu výpočtu kolizí mezi konvexními tělesy ve fyzikálních enginech.
 
 
 
-### Teorie agregace (Aggregation Theory)
+__Teorie agregace (Aggregation Theory)__
 * **K čemu to slouží:** K matematickému slučování (agregaci) objektů v teoretických modelech.
 * **Kde figuruje Minkowského suma:** Často se využívá v případech, kdy jsou jednotlivé objekty určené ke sloučení charakterizovány jako množiny.
 """
@@ -308,39 +552,40 @@ md"""
 # ╔═╡ 387a0e52-5946-4c81-83c3-304a2c73f8e4
 md"""
 ## Zdroje
-[^1]: VÝRUT, Radek. Minkowského suma. Online. Dostupné z: [https://home.zcu.cz/~rvyrut/WWW-KMA/publications/gcg2006.pdf](https://home.zcu.cz/~rvyrut/WWW-KMA/publications/gcg2006.pdf).
-[^2]: Polar Coordinates. Online. _Wolfram MathWorld_. Dostupné z: [https://mathworld.wolfram.com/PolarCoordinates.html](https://mathworld.wolfram.com/PolarCoordinates.html).
-[^3]: Minkowski sum of convex polygons. Online. _Algorithms for Competitive Programming_. Dostupné z: [https://cp-algorithms.com/geometry/minkowski.html](https://cp-algorithms.com/geometry/minkowski.html).
-[^4]: VONAŚEK, Vojtěch. Motion planning: basic concepts. Online. Dostupné z: [https://cw.fel.cvut.cz/b222/_media/courses/aro/lectures/2023-planning-basics.pdf](https://cw.fel.cvut.cz/b222/_media/courses/aro/lectures/2023-planning-basics.pdf).
-[^5]: Wikipedia. _Minkowski addition_. Online. In: Wikipedia, The Free Encyclopedia. Dostupné z: [https://en.wikipedia.org/wiki/Minkowski_addition](https://en.wikipedia.org/wiki/Minkowski_addition).
+1. VÝRUT, Radek. Minkowského suma. Online. Dostupné z: [https://home.zcu.cz/~rvyrut/WWW-KMA/publications/gcg2006.pdf](https://home.zcu.cz/~rvyrut/WWW-KMA/publications/gcg2006.pdf).
+1. Polar Coordinates. Online. _Wolfram MathWorld_. Dostupné z: [https://mathworld.wolfram.com/PolarCoordinates.html](https://mathworld.wolfram.com/PolarCoordinates.html).
+1. MAREŠ, Martin a VALLA, Tomáš. _Průvodce labyrintem algoritmů_. Druhé vydání. CZ.NIC. Praha: CZ.NIC, z.s.p.o., 2022. ISBN 9788088168638.
+1. BEKKER, Henk a JOS B. T. M. ROERDINK. An Efficient Algorithm to Calculate the Minkowski Sum of Convex 3D Polyhedra. Online. In: _Lecture notes in computer science_. 2001, s. 619-628. ISSN 0302-9743. Dostupné z: https://doi.org/10.1007/3-540-45545-0_71.
+1. Minkowski sum of convex polygons. Online. _Algorithms for Competitive Programming_. Dostupné z: [https://cp-algorithms.com/geometry/minkowski.html](https://cp-algorithms.com/geometry/minkowski.html).
+1. VONAŚEK, Vojtěch. Motion planning: basic concepts. Online. Dostupné z: [https://cw.fel.cvut.cz/b222/_media/courses/aro/lectures/2023-planning-basics.pdf](https://cw.fel.cvut.cz/b222/_media/courses/aro/lectures/2023-planning-basics.pdf).
+1. Wikipedia. _Minkowski addition_. Online. In: Wikipedia, The Free Encyclopedia. Dostupné z: [https://en.wikipedia.org/wiki/Minkowski_addition](https://en.wikipedia.org/wiki/Minkowski_addition).
 """
-# [^1]: <https://escholarship.org/uc/item/9rm7j1pq>
-# [^2]: <https://cp-algorithms.com/geometry/minkowski.html>
-# 3. <https://home.zcu.cz/~rvyrut/WWW-KMA/publications/gcg2006.pdf>
-# 4. <https://www.math.muni.cz/~slovak/Teaching/galgi.pdf>
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 LazySets = "b4f0291d-fe17-52bc-9479-3d1a343d9043"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
+BenchmarkTools = "~1.6.0"
 LaTeXStrings = "~1.4.0"
 LazySets = "~3.1.0"
-Plots = "~1.40.9"
-PlutoUI = "~0.7.23"
+Plots = "~1.41.4"
+PlutoUI = "~0.7.77"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.12.3"
+julia_version = "1.12.4"
 manifest_format = "2.0"
-project_hash = "315e134e67435c6a5ca59d99df83bc81545411b1"
+project_hash = "74d0f5efcfb0f9a5148bf75697a79cad52cb5537"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -378,10 +623,10 @@ uuid = "d1d4a3ce-64b1-5f1a-9ba4-7e7e69966f35"
 version = "0.1.9"
 
 [[deps.Bzip2_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "8873e196c2eb87962a2048b3b8e08946535864a1"
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "1b96ea4a01afe0ea4090c5c8039690672dd13f2e"
 uuid = "6e34b625-4abd-537c-b88f-471c36dfa7a0"
-version = "1.0.8+4"
+version = "1.0.9+0"
 
 [[deps.CRlibm]]
 deps = ["CRlibm_jll"]
@@ -397,9 +642,9 @@ version = "1.0.1+0"
 
 [[deps.Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "CompilerSupportLibraries_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "009060c9a6168704143100f36ab08f06c2af4642"
+git-tree-sha1 = "fde3bf89aead2e723284a8ff9cdf5b551ed700e8"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
-version = "1.18.2+1"
+version = "1.18.5+0"
 
 [[deps.CodecBzip2]]
 deps = ["Bzip2_jll", "TranscodingStreams"]
@@ -409,21 +654,21 @@ version = "0.8.5"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
-git-tree-sha1 = "bce6804e5e6044c6daab27bb533d1295e4a2e759"
+git-tree-sha1 = "962834c22b66e32aa10f7611c08c8ca4e20749a9"
 uuid = "944b1d66-785c-5afd-91f1-9de20f533193"
-version = "0.7.6"
+version = "0.7.8"
 
 [[deps.ColorSchemes]]
 deps = ["ColorTypes", "ColorVectorSpace", "Colors", "FixedPointNumbers", "PrecompileTools", "Random"]
-git-tree-sha1 = "c785dfb1b3bfddd1da557e861b919819b82bbe5b"
+git-tree-sha1 = "b0fd3f56fa442f81e0a47815c92245acfaaa4e34"
 uuid = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
-version = "3.27.1"
+version = "3.31.0"
 
 [[deps.ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
-git-tree-sha1 = "c7acce7a7e1078a20a285211dd73cd3941a871d6"
+git-tree-sha1 = "67e11ee83a43eb71ddc950302c53bf33f0690dfe"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
-version = "0.12.0"
+version = "0.12.1"
 weakdeps = ["StyledStrings"]
 
     [deps.ColorTypes.extensions]
@@ -441,9 +686,9 @@ weakdeps = ["SpecialFunctions"]
 
 [[deps.Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
-git-tree-sha1 = "64e15186f0aa277e174aa81798f7eb8598e0157e"
+git-tree-sha1 = "37ea44092930b1811e666c3bc38065d7d87fcc74"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
-version = "0.13.0"
+version = "0.13.1"
 
 [[deps.CommonSubexpressions]]
 deps = ["MacroTools"]
@@ -453,9 +698,9 @@ version = "0.3.1"
 
 [[deps.Compat]]
 deps = ["TOML", "UUIDs"]
-git-tree-sha1 = "8ae8d32e09f0dcf42a36b90d4e17f5dd2e4c4215"
+git-tree-sha1 = "9d8a54ce4b17aa5bdce0ea5c34bc5e7c340d16ad"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "4.16.0"
+version = "4.18.1"
 weakdeps = ["Dates", "LinearAlgebra"]
 
     [deps.Compat.extensions]
@@ -468,9 +713,9 @@ version = "1.3.0+1"
 
 [[deps.ConcurrentUtilities]]
 deps = ["Serialization", "Sockets"]
-git-tree-sha1 = "f36e5e8fdffcb5646ea5da81495a5a7566005127"
+git-tree-sha1 = "d9d26935a0bcffc87d2613ce14c527c99fc543fd"
 uuid = "f0e56b4a-5159-44fe-b623-3e5288b988bb"
-version = "2.4.3"
+version = "2.5.0"
 
 [[deps.Contour]]
 git-tree-sha1 = "439e35b0b36e2e5881738abc8857bd92ad6ff9a8"
@@ -484,9 +729,9 @@ version = "1.16.0"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
-git-tree-sha1 = "1d0a14036acb104d9e89698bd408f63ab58cdc82"
+git-tree-sha1 = "4e1fe97fdaed23e9dc21d4d664bea76b65fc50a0"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.18.20"
+version = "0.18.22"
 
 [[deps.Dates]]
 deps = ["Printf"]
@@ -495,9 +740,9 @@ version = "1.11.0"
 
 [[deps.Dbus_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "fc173b380865f70627d7dd1190dc2fce6cc105af"
+git-tree-sha1 = "473e9afc9cf30814eb67ffa5f2db7df82c3ad9fd"
 uuid = "ee1fde0b-3d02-5ea6-8484-8dfef6360eab"
-version = "1.14.10+0"
+version = "1.16.2+0"
 
 [[deps.DelimitedFiles]]
 deps = ["Mmap"]
@@ -523,10 +768,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 version = "1.11.0"
 
 [[deps.DocStringExtensions]]
-deps = ["LibGit2"]
-git-tree-sha1 = "2fb1e02f2b635d0845df5d7c167fec4dd739b00d"
+git-tree-sha1 = "7442a5dfe1ebb773c29cc2962a8980f47221d76c"
 uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
-version = "0.9.3"
+version = "0.9.5"
 
 [[deps.Downloads]]
 deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
@@ -557,9 +801,9 @@ version = "0.1.11"
 
 [[deps.Expat_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "e51db81749b0777b2147fbe7b783ee79045b8e99"
+git-tree-sha1 = "27af30de8b5445644e8ffe3bcb0d72049c089cf1"
 uuid = "2e619515-83b5-522b-bb60-26c02a35a201"
-version = "2.6.4+3"
+version = "2.7.3+0"
 
 [[deps.ExprTools]]
 git-tree-sha1 = "27415f162e6028e81c72b82ef756bf321213b6ec"
@@ -568,15 +812,15 @@ version = "0.1.10"
 
 [[deps.FFMPEG]]
 deps = ["FFMPEG_jll"]
-git-tree-sha1 = "53ebe7511fa11d33bec688a9178fac4e49eeee00"
+git-tree-sha1 = "95ecf07c2eea562b5adbd0696af6db62c0f52560"
 uuid = "c87230d0-a227-11e9-1b43-d7ebe4e7570a"
-version = "0.4.2"
+version = "0.4.5"
 
 [[deps.FFMPEG_jll]]
 deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "JLLWrappers", "LAME_jll", "Libdl", "Ogg_jll", "OpenSSL_jll", "Opus_jll", "PCRE2_jll", "Zlib_jll", "libaom_jll", "libass_jll", "libfdk_aac_jll", "libvorbis_jll", "x264_jll", "x265_jll"]
-git-tree-sha1 = "466d45dc38e15794ec7d5d63ec03d776a9aff36e"
+git-tree-sha1 = "01ba9d15e9eae375dc1eb9589df76b3572acd3f2"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
-version = "4.4.4+1"
+version = "8.0.1+0"
 
 [[deps.FastRounding]]
 deps = ["ErrorfreeArithmetic", "LinearAlgebra"]
@@ -596,9 +840,9 @@ version = "0.8.5"
 
 [[deps.Fontconfig_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Expat_jll", "FreeType2_jll", "JLLWrappers", "Libdl", "Libuuid_jll", "Zlib_jll"]
-git-tree-sha1 = "21fac3c77d7b5a9fc03b0ec503aa1a6392c34d2b"
+git-tree-sha1 = "f85dac9a96a01087df6e3a749840015a0ca3817d"
 uuid = "a3f928ae-7b40-5064-980b-68af3947d34b"
-version = "2.15.0+0"
+version = "2.17.1+0"
 
 [[deps.Format]]
 git-tree-sha1 = "9c68794ef81b08086aeb32eeaf33531668d5f5fc"
@@ -617,21 +861,21 @@ weakdeps = ["StaticArrays"]
 
 [[deps.FreeType2_jll]]
 deps = ["Artifacts", "Bzip2_jll", "JLLWrappers", "Libdl", "Zlib_jll"]
-git-tree-sha1 = "786e968a8d2fb167f2e4880baba62e0e26bd8e4e"
+git-tree-sha1 = "2c5512e11c791d1baed2049c5652441b28fc6a31"
 uuid = "d7e528f0-a631-5988-bf34-fe36492bcfd7"
-version = "2.13.3+1"
+version = "2.13.4+0"
 
 [[deps.FriBidi_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "846f7026a9decf3679419122b49f8a1fdb48d2d5"
+git-tree-sha1 = "7a214fdac5ed5f59a22c2d9a885a16da1c74bbc7"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
-version = "1.0.16+0"
+version = "1.0.17+0"
 
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll", "libdecor_jll", "xkbcommon_jll"]
-git-tree-sha1 = "fcb0584ff34e25155876418979d4c8971243bb89"
+git-tree-sha1 = "b7bfd56fa66616138dfe5237da4dc13bbd83c67f"
 uuid = "0656b61e-2033-5cc2-a64a-77c0f6c09b89"
-version = "3.4.0+2"
+version = "3.4.1+0"
 
 [[deps.GLPK]]
 deps = ["GLPK_jll", "MathOptInterface"]
@@ -652,33 +896,45 @@ version = "6.3.0+2"
 
 [[deps.GR]]
 deps = ["Artifacts", "Base64", "DelimitedFiles", "Downloads", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Preferences", "Printf", "Qt6Wayland_jll", "Random", "Serialization", "Sockets", "TOML", "Tar", "Test", "p7zip_jll"]
-git-tree-sha1 = "424c8f76017e39fdfcdbb5935a8e6742244959e8"
+git-tree-sha1 = "f305bdb91e1f3fcc687944c97f2ede40585b1bd5"
 uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
-version = "0.73.10"
+version = "0.73.19"
+
+    [deps.GR.extensions]
+    GRIJuliaExt = "IJulia"
+
+    [deps.GR.weakdeps]
+    IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
 
 [[deps.GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "FreeType2_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Qt6Base_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "b90934c8cb33920a8dc66736471dc3961b42ec9f"
+git-tree-sha1 = "de439fbc02b9dc0e639e67d7c5bd5811ff3b6f06"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
-version = "0.73.10+0"
+version = "0.73.19+1"
 
-[[deps.Gettext_jll]]
-deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "XML2_jll"]
-git-tree-sha1 = "9b02998aba7bf074d14de89f9d37ca24a1a0b046"
-uuid = "78b55507-aeef-58d4-861c-77aaff3498b1"
-version = "0.21.0+0"
+[[deps.GettextRuntime_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Libiconv_jll"]
+git-tree-sha1 = "45288942190db7c5f760f59c04495064eedf9340"
+uuid = "b0724c58-0f36-5564-988d-3bb0596ebc4a"
+version = "0.22.4+0"
+
+[[deps.Ghostscript_jll]]
+deps = ["Artifacts", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Zlib_jll"]
+git-tree-sha1 = "38044a04637976140074d0b0621c1edf0eb531fd"
+uuid = "61579ee1-b43e-5ca0-a5da-69d92c66a64b"
+version = "9.55.1+0"
 
 [[deps.Glib_jll]]
-deps = ["Artifacts", "Gettext_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Libiconv_jll", "Libmount_jll", "PCRE2_jll", "Zlib_jll"]
-git-tree-sha1 = "b0036b392358c80d2d2124746c2bf3d48d457938"
+deps = ["Artifacts", "GettextRuntime_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Libiconv_jll", "Libmount_jll", "PCRE2_jll", "Zlib_jll"]
+git-tree-sha1 = "6b4d2dc81736fe3980ff0e8879a9fc7c33c44ddf"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
-version = "2.82.4+0"
+version = "2.86.2+0"
 
 [[deps.Graphite2_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "01979f9b37367603e2848ea225918a3b3861b606"
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "8a6dbda1fd736d60cc477d99f2e7a042acfa46e8"
 uuid = "3b182d85-2403-5c21-9c21-1e1f0cc25472"
-version = "1.3.14+1"
+version = "1.3.15+0"
 
 [[deps.Grisu]]
 git-tree-sha1 = "53bb909d1151e57e2484c3d1b53e19552b887fb2"
@@ -687,21 +943,21 @@ version = "1.0.2"
 
 [[deps.HTTP]]
 deps = ["Base64", "CodecZlib", "ConcurrentUtilities", "Dates", "ExceptionUnwrapping", "Logging", "LoggingExtras", "MbedTLS", "NetworkOptions", "OpenSSL", "PrecompileTools", "Random", "SimpleBufferStream", "Sockets", "URIs", "UUIDs"]
-git-tree-sha1 = "c67b33b085f6e2faf8bf79a61962e7339a81129c"
+git-tree-sha1 = "5e6fe50ae7f23d171f44e311c2960294aaa0beb5"
 uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
-version = "1.10.15"
+version = "1.10.19"
 
 [[deps.HarfBuzz_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "Graphite2_jll", "JLLWrappers", "Libdl", "Libffi_jll"]
-git-tree-sha1 = "55c53be97790242c29031e5cd45e8ac296dadda3"
+git-tree-sha1 = "f923f9a774fcf3f5cb761bfa43aeadd689714813"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
-version = "8.5.0+0"
+version = "8.5.1+0"
 
 [[deps.Hyperscript]]
 deps = ["Test"]
-git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
+git-tree-sha1 = "179267cfa5e712760cd43dcae385d7ea90cc25a4"
 uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
-version = "0.0.4"
+version = "0.0.5"
 
 [[deps.HypertextLiteral]]
 deps = ["Tricks"]
@@ -711,9 +967,9 @@ version = "0.9.5"
 
 [[deps.IOCapture]]
 deps = ["Logging", "Random"]
-git-tree-sha1 = "b6d6bfdd7ce25b0f9b2f6b3dd56b2673a66c8770"
+git-tree-sha1 = "0ee181ec08df7d7c911901ea38baf16f755114dc"
 uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
-version = "0.2.5"
+version = "1.0.0"
 
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
@@ -727,21 +983,21 @@ uuid = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253"
 version = "0.21.2"
 
 [[deps.IrrationalConstants]]
-git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
+git-tree-sha1 = "b2d91fe939cae05960e760110b328288867b5758"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
-version = "0.2.2"
+version = "0.2.6"
 
 [[deps.JLFzf]]
-deps = ["Pipe", "REPL", "Random", "fzf_jll"]
-git-tree-sha1 = "71b48d857e86bf7a1838c4736545699974ce79a2"
+deps = ["REPL", "Random", "fzf_jll"]
+git-tree-sha1 = "82f7acdc599b65e0f8ccd270ffa1467c21cb647b"
 uuid = "1019f520-868f-41f5-a6de-eb00f4b6a39c"
-version = "0.1.9"
+version = "0.1.11"
 
 [[deps.JLLWrappers]]
 deps = ["Artifacts", "Preferences"]
-git-tree-sha1 = "a007feb38b422fbdab534406aeca1b86823cb4d6"
+git-tree-sha1 = "0533e564aae234aff59ab625543145446d8b6ec2"
 uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
-version = "1.7.0"
+version = "1.7.1"
 
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
@@ -763,9 +1019,9 @@ version = "1.14.1"
 
 [[deps.JpegTurbo_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "3447a92280ecaad1bd93d3fce3d408b6cfff8913"
+git-tree-sha1 = "b6893345fd6658c8e475d40155789f4860ac3b21"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
-version = "3.1.0+1"
+version = "3.1.4+0"
 
 [[deps.JuMP]]
 deps = ["LinearAlgebra", "MacroTools", "MathOptInterface", "MutableArithmetics", "OrderedCollections", "PrecompileTools", "Printf", "SparseArrays"]
@@ -786,27 +1042,27 @@ version = "1.12.0"
 
 [[deps.LAME_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "170b660facf5df5de098d866564877e119141cbd"
+git-tree-sha1 = "059aabebaa7c82ccb853dd4a0ee9d17796f7e1bc"
 uuid = "c1c5ebd0-6772-5130-a774-d5fcae4a789d"
-version = "3.100.2+0"
+version = "3.100.3+0"
 
 [[deps.LERC_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "78e0f4b5270c4ae09c7c5f78e77b904199038945"
+git-tree-sha1 = "aaafe88dccbd957a8d82f7d05be9b69172e0cee3"
 uuid = "88015f11-f218-50d7-93a8-a6af411a945d"
-version = "4.0.0+2"
+version = "4.0.1+0"
 
 [[deps.LLVMOpenMP_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "78211fb6cbc872f77cad3fc0b6cf647d923f4929"
+git-tree-sha1 = "eb62a3deb62fc6d8822c0c4bef73e4412419c5d8"
 uuid = "1d63c593-3942-5779-bab2-d838dc0a180e"
-version = "18.1.7+0"
+version = "18.1.8+0"
 
 [[deps.LZO_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "854a9c268c43b77b0a27f22d7fab8d33cdb3a731"
+git-tree-sha1 = "1c602b1127f4751facb671441ca72715cc95938a"
 uuid = "dd4b983a-f0e5-5f8d-a1b7-129d4a5fb1ac"
-version = "2.10.2+3"
+version = "2.10.3+0"
 
 [[deps.LaTeXStrings]]
 git-tree-sha1 = "dda21b8cbd6a6c40d9d02a73230f9d70fed6918c"
@@ -814,20 +1070,22 @@ uuid = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 version = "1.4.0"
 
 [[deps.Latexify]]
-deps = ["Format", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdown", "OrderedCollections", "Requires"]
-git-tree-sha1 = "ce5f5621cac23a86011836badfedf664a612cee4"
+deps = ["Format", "Ghostscript_jll", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdown", "OrderedCollections", "Requires"]
+git-tree-sha1 = "44f93c47f9cd6c7e431f2f2091fcba8f01cd7e8f"
 uuid = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
-version = "0.16.5"
+version = "0.16.10"
 
     [deps.Latexify.extensions]
     DataFramesExt = "DataFrames"
     SparseArraysExt = "SparseArrays"
     SymEngineExt = "SymEngine"
+    TectonicExt = "tectonic_jll"
 
     [deps.Latexify.weakdeps]
     DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
     SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
     SymEngine = "123dc426-2d89-5057-bbad-38513e3affd8"
+    tectonic_jll = "d7dd28d6-a5e6-559c-9131-7eb760cdacc5"
 
 [[deps.LazySets]]
 deps = ["Distributed", "GLPK", "IntervalArithmetic", "JuMP", "LinearAlgebra", "Random", "ReachabilityBase", "RecipesBase", "Reexport", "Requires", "SharedArrays", "SparseArrays", "StaticArraysCore"]
@@ -865,52 +1123,40 @@ uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 version = "1.11.0"
 
 [[deps.Libffi_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "27ecae93dd25ee0909666e6835051dd684cc035e"
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "c8da7e6a91781c41a863611c7e966098d783c57a"
 uuid = "e9f186c6-92d2-5b65-8a66-fee21dc1b490"
-version = "3.2.2+2"
-
-[[deps.Libgcrypt_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Libgpg_error_jll"]
-git-tree-sha1 = "8be878062e0ffa2c3f67bb58a595375eda5de80b"
-uuid = "d4300ac3-e22c-5743-9152-c294e39db1e4"
-version = "1.11.0+0"
+version = "3.4.7+0"
 
 [[deps.Libglvnd_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libX11_jll", "Xorg_libXext_jll"]
-git-tree-sha1 = "ff3b4b9d35de638936a525ecd36e86a8bb919d11"
+git-tree-sha1 = "d36c21b9e7c172a44a10484125024495e2625ac0"
 uuid = "7e76a0d4-f3c7-5321-8279-8d96eeed0f29"
-version = "1.7.0+0"
-
-[[deps.Libgpg_error_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "a7f43994b47130e4f491c3b2dbe78fe9e2aed2b3"
-uuid = "7add5ba3-2f88-524e-9cd5-f83b8a55f7b8"
-version = "1.51.0+2"
+version = "1.7.1+1"
 
 [[deps.Libiconv_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "61dfdba58e585066d8bce214c5a51eaa0539f269"
+git-tree-sha1 = "be484f5c92fad0bd8acfef35fe017900b0b73809"
 uuid = "94ce4f54-9a6c-5748-9c1c-f9c7231a4531"
-version = "1.17.0+1"
+version = "1.18.0+0"
 
 [[deps.Libmount_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "84eef7acd508ee5b3e956a2ae51b05024181dee0"
+git-tree-sha1 = "3acf07f130a76f87c041cfb2ff7d7284ca67b072"
 uuid = "4b2f31a3-9ecc-558c-b454-b3730dcb73e9"
-version = "2.40.2+2"
+version = "2.41.2+0"
 
 [[deps.Libtiff_jll]]
 deps = ["Artifacts", "JLLWrappers", "JpegTurbo_jll", "LERC_jll", "Libdl", "XZ_jll", "Zlib_jll", "Zstd_jll"]
-git-tree-sha1 = "b404131d06f7886402758c9ce2214b636eb4d54a"
+git-tree-sha1 = "f04133fe05eff1667d2054c53d59f9122383fe05"
 uuid = "89763e89-9b03-5906-acba-b20f662cd828"
-version = "4.7.0+0"
+version = "4.7.2+0"
 
 [[deps.Libuuid_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "edbf5309f9ddf1cab25afc344b1e8150b7c832f9"
+git-tree-sha1 = "2a7a12fc0a4e7fb773450d17975322aa77142106"
 uuid = "38a345b3-de98-5d2b-a5d3-14cd9215e700"
-version = "2.40.2+2"
+version = "2.41.2+0"
 
 [[deps.LinearAlgebra]]
 deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
@@ -939,15 +1185,19 @@ version = "1.11.0"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
-git-tree-sha1 = "f02b56007b064fbfddb4c9cd60161b6dd0f40df3"
+git-tree-sha1 = "f00544d95982ea270145636c181ceda21c4e2575"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
+version = "1.2.0"
+
+[[deps.MIMEs]]
+git-tree-sha1 = "c64d943587f7187e751162b3b84445bbbd79f691"
+uuid = "6c6e2e6c-3030-632d-7369-2d6c69616d65"
 version = "1.1.0"
 
 [[deps.MacroTools]]
-deps = ["Markdown", "Random"]
-git-tree-sha1 = "2fa9ee3e63fd3a4f7a9a4f4744a52f4856de82df"
+git-tree-sha1 = "1e0228a030642014fe5cfe68c2c0a818f9e3f522"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-version = "0.5.13"
+version = "0.5.16"
 
 [[deps.Markdown]]
 deps = ["Base64", "JuliaSyntaxHighlighting", "StyledStrings"]
@@ -968,14 +1218,14 @@ version = "1.1.9"
 
 [[deps.MbedTLS_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "926c6af3a037c68d02596a44c22ec3595f5f760b"
+git-tree-sha1 = "ff69a2b1330bcb730b9ac1ab7dd680176f5896b8"
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
-version = "2.28.6+0"
+version = "2.28.1010+0"
 
 [[deps.Measures]]
-git-tree-sha1 = "c13304c81eec1ed3af7fc20e75fb6b26092a1102"
+git-tree-sha1 = "b513cedd20d9c914783d8ad83d08120702bf2c77"
 uuid = "442fdcdd-2543-5da2-b0f3-8c86c306513e"
-version = "0.3.2"
+version = "0.3.3"
 
 [[deps.Missings]]
 deps = ["DataAPI"]
@@ -989,7 +1239,7 @@ version = "1.11.0"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2025.5.20"
+version = "2025.11.4"
 
 [[deps.MutableArithmetics]]
 deps = ["LinearAlgebra", "SparseArrays", "Test"]
@@ -999,19 +1249,19 @@ version = "1.6.2"
 
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
-git-tree-sha1 = "0877504529a3e5c3343c6f8b4c0381e57e4387e4"
+git-tree-sha1 = "9b8215b1ee9e78a293f99797cd31375471b2bcae"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
-version = "1.0.2"
+version = "1.1.3"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 version = "1.3.0"
 
 [[deps.Ogg_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "887579a3eb005446d514ab7aeac5d1d027658b8f"
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "b6aa4566bb7ae78498a5e68943863fa8b5231b59"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
-version = "1.3.5+1"
+version = "1.3.6+0"
 
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
@@ -1024,10 +1274,10 @@ uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
 version = "0.8.7+0"
 
 [[deps.OpenSSL]]
-deps = ["BitFlags", "Dates", "MozillaCACerts_jll", "OpenSSL_jll", "Sockets"]
-git-tree-sha1 = "38cb508d080d21dc1128f7fb04f20387ed4c0af4"
+deps = ["BitFlags", "Dates", "MozillaCACerts_jll", "NetworkOptions", "OpenSSL_jll", "Sockets"]
+git-tree-sha1 = "1d1aaa7d449b58415f97d2839c318b70ffb525a0"
 uuid = "4d8831e6-92b7-49fb-bdf8-b643e874388c"
-version = "1.4.3"
+version = "1.6.1"
 
 [[deps.OpenSSL_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1042,14 +1292,14 @@ version = "0.5.6+0"
 
 [[deps.Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "6703a85cb3781bd5909d48730a67205f3f31a575"
+git-tree-sha1 = "39a11854f0cba27aa41efaedf43c77c5daa6be51"
 uuid = "91d4177d-7536-5919-b921-800302f37372"
-version = "1.3.3+0"
+version = "1.6.0+0"
 
 [[deps.OrderedCollections]]
-git-tree-sha1 = "12f1439c4f986bb868acda6ea33ebc78e19b95ad"
+git-tree-sha1 = "05868e21324cede2207c6f0f466b4bfef6d5e7ee"
 uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
-version = "1.7.0"
+version = "1.8.1"
 
 [[deps.PCRE2_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1058,26 +1308,21 @@ version = "10.44.0+1"
 
 [[deps.Pango_jll]]
 deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "FriBidi_jll", "Glib_jll", "HarfBuzz_jll", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "ed6834e95bd326c52d5675b4181386dfbe885afb"
+git-tree-sha1 = "0662b083e11420952f2e62e17eddae7fc07d5997"
 uuid = "36c8627f-9965-5494-a995-c6b170f724f3"
-version = "1.55.5+0"
+version = "1.57.0+0"
 
 [[deps.Parsers]]
 deps = ["Dates", "PrecompileTools", "UUIDs"]
-git-tree-sha1 = "8489905bcdbcfac64d1daa51ca07c0d8f0283821"
+git-tree-sha1 = "7d2f8f21da5db6a806faf7b9b292296da42b2810"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.8.1"
-
-[[deps.Pipe]]
-git-tree-sha1 = "6842804e7867b115ca9de748a0cf6b364523c16d"
-uuid = "b98c9c47-44ae-5843-9183-064241ee97a0"
-version = "1.3.0"
+version = "2.8.3"
 
 [[deps.Pixman_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "LLVMOpenMP_jll", "Libdl"]
-git-tree-sha1 = "35621f10a7531bc8fa58f74610b1bfb70a3cfc6b"
+git-tree-sha1 = "db76b1ecd5e9715f3d043cec13b2ec93ce015d53"
 uuid = "30392449-352a-5448-841d-b1acce4e97dc"
-version = "0.43.4+0"
+version = "0.44.2+0"
 
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "Random", "SHA", "TOML", "Tar", "UUIDs", "p7zip_jll"]
@@ -1096,15 +1341,15 @@ version = "3.3.0"
 
 [[deps.PlotUtils]]
 deps = ["ColorSchemes", "Colors", "Dates", "PrecompileTools", "Printf", "Random", "Reexport", "StableRNGs", "Statistics"]
-git-tree-sha1 = "3ca9a356cd2e113c420f2c13bea19f8d3fb1cb18"
+git-tree-sha1 = "26ca162858917496748aad52bb5d3be4d26a228a"
 uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
-version = "1.4.3"
+version = "1.4.4"
 
 [[deps.Plots]]
-deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "PrecompileTools", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "TOML", "UUIDs", "UnicodeFun", "UnitfulLatexify", "Unzip"]
-git-tree-sha1 = "dae01f8c2e069a683d3a6e17bbae5070ab94786f"
+deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "PrecompileTools", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "TOML", "UUIDs", "UnicodeFun", "Unzip"]
+git-tree-sha1 = "063ef757a1e0e15af77bbe92be92da672793fd4e"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.40.9"
+version = "1.41.4"
 
     [deps.Plots.extensions]
     FileIOExt = "FileIO"
@@ -1121,22 +1366,22 @@ version = "1.40.9"
     Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [[deps.PlutoUI]]
-deps = ["AbstractPlutoDingetjes", "Base64", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "5152abbdab6488d5eec6a01029ca6697dff4ec8f"
+deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Downloads", "FixedPointNumbers", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "Logging", "MIMEs", "Markdown", "Random", "Reexport", "URIs", "UUIDs"]
+git-tree-sha1 = "6ed167db158c7c1031abf3bd67f8e689c8bdf2b7"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.23"
+version = "0.7.77"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
-git-tree-sha1 = "5aa36f7049a63a1528fe8f7c3f2113413ffd4e1f"
+git-tree-sha1 = "07a921781cab75691315adc645096ed5e370cb77"
 uuid = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
-version = "1.2.1"
+version = "1.3.3"
 
 [[deps.Preferences]]
 deps = ["TOML"]
-git-tree-sha1 = "9306f6085165d270f7e3db02af26a400d580f5c6"
+git-tree-sha1 = "522f093a29b31a93e34eaea17ba055d850edea28"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
-version = "1.4.3"
+version = "1.5.1"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -1149,33 +1394,33 @@ uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 version = "1.11.0"
 
 [[deps.PtrArrays]]
-git-tree-sha1 = "77a42d78b6a92df47ab37e177b2deac405e1c88f"
+git-tree-sha1 = "1d36ef11a9aaf1e8b74dacc6a731dd1de8fd493d"
 uuid = "43287f4e-b6f4-7ad1-bb20-aadabca52c3d"
-version = "1.2.1"
+version = "1.3.0"
 
 [[deps.Qt6Base_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Vulkan_Loader_jll", "Xorg_libSM_jll", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_cursor_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "libinput_jll", "xkbcommon_jll"]
-git-tree-sha1 = "492601870742dcd38f233b23c3ec629628c1d724"
+git-tree-sha1 = "34f7e5d2861083ec7596af8b8c092531facf2192"
 uuid = "c0090381-4147-56d7-9ebc-da0b1113ec56"
-version = "6.7.1+1"
+version = "6.8.2+2"
 
 [[deps.Qt6Declarative_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Qt6Base_jll", "Qt6ShaderTools_jll"]
-git-tree-sha1 = "e5dd466bf2569fe08c91a2cc29c1003f4797ac3b"
+git-tree-sha1 = "da7adf145cce0d44e892626e647f9dcbe9cb3e10"
 uuid = "629bc702-f1f5-5709-abd5-49b8460ea067"
-version = "6.7.1+2"
+version = "6.8.2+1"
 
 [[deps.Qt6ShaderTools_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Qt6Base_jll"]
-git-tree-sha1 = "1a180aeced866700d4bebc3120ea1451201f16bc"
+git-tree-sha1 = "9eca9fc3fe515d619ce004c83c31ffd3f85c7ccf"
 uuid = "ce943373-25bb-56aa-8eca-768745ed7b5a"
-version = "6.7.1+1"
+version = "6.8.2+1"
 
 [[deps.Qt6Wayland_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Qt6Base_jll", "Qt6Declarative_jll"]
-git-tree-sha1 = "729927532d48cf79f49070341e1d918a65aba6b0"
+git-tree-sha1 = "8f528b0851b5b7025032818eb5abbeb8a736f853"
 uuid = "e99dba38-086e-5de3-a5b1-6e4c66e897c3"
-version = "6.7.1+1"
+version = "6.8.2+2"
 
 [[deps.REPL]]
 deps = ["InteractiveUtils", "JuliaSyntaxHighlighting", "Markdown", "Sockets", "StyledStrings", "Unicode"]
@@ -1218,9 +1463,9 @@ version = "1.0.1"
 
 [[deps.Requires]]
 deps = ["UUIDs"]
-git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
+git-tree-sha1 = "62389eeff14780bfe55195b7204c0d8738436d64"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
-version = "1.3.0"
+version = "1.3.1"
 
 [[deps.RoundingEmulator]]
 git-tree-sha1 = "40b9edad2e5287e05bd413a38f61a8ff55b9557b"
@@ -1233,9 +1478,9 @@ version = "0.7.0"
 
 [[deps.Scratch]]
 deps = ["Dates"]
-git-tree-sha1 = "3bac05bc7e74a75fd9cba4295cde4045d9fe2386"
+git-tree-sha1 = "9b81b8393e50b7d4e6d0a9f14e192294d3b7c109"
 uuid = "6c6a2e73-6563-6170-7368-637461726353"
-version = "1.2.1"
+version = "1.3.0"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -1268,9 +1513,9 @@ version = "1.11.0"
 
 [[deps.SortingAlgorithms]]
 deps = ["DataStructures"]
-git-tree-sha1 = "66e0a8e672a0bdfca2c3f5937efb8538b9ddc085"
+git-tree-sha1 = "64d974c2e6fdf07f8155b5b2ca2ffa9069b608d9"
 uuid = "a2af1166-a08f-5f64-846c-94a0d3cef48c"
-version = "1.2.1"
+version = "1.2.2"
 
 [[deps.SparseArrays]]
 deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
@@ -1291,9 +1536,9 @@ version = "2.5.0"
 
 [[deps.StableRNGs]]
 deps = ["Random"]
-git-tree-sha1 = "83e6cce8324d49dfaf9ef059227f91ed4441a8e5"
+git-tree-sha1 = "4f96c596b8c8258cc7d3b19797854d368f243ddc"
 uuid = "860ef19b-820b-49d6-a774-d7a799459cd3"
-version = "1.0.2"
+version = "1.0.4"
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "PrecompileTools", "Random", "StaticArraysCore"]
@@ -1326,15 +1571,15 @@ weakdeps = ["SparseArrays"]
 
 [[deps.StatsAPI]]
 deps = ["LinearAlgebra"]
-git-tree-sha1 = "1ff449ad350c9c4cbc756624d6f8a8c3ef56d3ed"
+git-tree-sha1 = "178ed29fd5b2a2cfc3bd31c13375ae925623ff36"
 uuid = "82ae8749-77ed-4fe6-ae5f-f523153014b0"
-version = "1.7.0"
+version = "1.8.0"
 
 [[deps.StatsBase]]
 deps = ["AliasTables", "DataAPI", "DataStructures", "LinearAlgebra", "LogExpFunctions", "Missings", "Printf", "Random", "SortingAlgorithms", "SparseArrays", "Statistics", "StatsAPI"]
-git-tree-sha1 = "29321314c920c26684834965ec2ce0dacc9cf8e5"
+git-tree-sha1 = "be5733d4a2b03341bdcab91cea6caa7e31ced14b"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-version = "0.34.4"
+version = "0.34.9"
 
 [[deps.StructTypes]]
 deps = ["Dates", "UUIDs"]
@@ -1378,14 +1623,14 @@ uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 version = "0.11.3"
 
 [[deps.Tricks]]
-git-tree-sha1 = "7822b97e99a1672bfb1b49b668a6d46d58d8cbcb"
+git-tree-sha1 = "311349fd1c93a31f783f977a71e8b062a57d4101"
 uuid = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
-version = "0.1.9"
+version = "0.1.13"
 
 [[deps.URIs]]
-git-tree-sha1 = "67db6cc7b3821e19ebe75791a9dd19c9b1188f2b"
+git-tree-sha1 = "bef26fb046d031353ef97a82e3fdb6afe7f21b1a"
 uuid = "5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4"
-version = "1.5.1"
+version = "1.6.1"
 
 [[deps.UUIDs]]
 deps = ["Random", "SHA"]
@@ -1402,26 +1647,6 @@ git-tree-sha1 = "53915e50200959667e78a92a418594b428dffddf"
 uuid = "1cfade01-22cf-5700-b092-accc4b62d6e1"
 version = "0.4.1"
 
-[[deps.Unitful]]
-deps = ["Dates", "LinearAlgebra", "Random"]
-git-tree-sha1 = "01915bfcd62be15329c9a07235447a89d588327c"
-uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
-version = "1.21.1"
-
-    [deps.Unitful.extensions]
-    ConstructionBaseUnitfulExt = "ConstructionBase"
-    InverseFunctionsUnitfulExt = "InverseFunctions"
-
-    [deps.Unitful.weakdeps]
-    ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
-    InverseFunctions = "3587e190-3f89-42d0-90ee-14403ec27112"
-
-[[deps.UnitfulLatexify]]
-deps = ["LaTeXStrings", "Latexify", "Unitful"]
-git-tree-sha1 = "975c354fcd5f7e1ddcc1f1a23e6e091d99e99bc8"
-uuid = "45397f5d-5981-4c77-b2b3-fc36d6e9b728"
-version = "1.6.4"
-
 [[deps.Unzip]]
 git-tree-sha1 = "ca0969166a028236229f63514992fc073799bb78"
 uuid = "41fe7b60-77ed-43a1-b4f0-825fd5a5650d"
@@ -1434,178 +1659,154 @@ uuid = "a44049a8-05dd-5a78-86c9-5fde0876e88c"
 version = "1.3.243+0"
 
 [[deps.Wayland_jll]]
-deps = ["Artifacts", "EpollShim_jll", "Expat_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Pkg", "XML2_jll"]
-git-tree-sha1 = "85c7811eddec9e7f22615371c3cc81a504c508ee"
+deps = ["Artifacts", "EpollShim_jll", "Expat_jll", "JLLWrappers", "Libdl", "Libffi_jll"]
+git-tree-sha1 = "96478df35bbc2f3e1e791bc7a3d0eeee559e60e9"
 uuid = "a2964d1f-97da-50d4-b82a-358c7fce9d89"
-version = "1.21.0+2"
-
-[[deps.Wayland_protocols_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "5db3e9d307d32baba7067b13fc7b5aa6edd4a19a"
-uuid = "2381bf8a-dfd0-557d-9999-79630e7b1b91"
-version = "1.36.0+0"
-
-[[deps.XML2_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Zlib_jll"]
-git-tree-sha1 = "a2fccc6559132927d4c5dc183e3e01048c6dcbd6"
-uuid = "02c8fc9c-b97f-50b9-bbe4-9be30ff0a78a"
-version = "2.13.5+0"
-
-[[deps.XSLT_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Libgcrypt_jll", "Libgpg_error_jll", "Libiconv_jll", "XML2_jll", "Zlib_jll"]
-git-tree-sha1 = "7d1671acbe47ac88e981868a078bd6b4e27c5191"
-uuid = "aed1982a-8fda-507f-9586-7b0439959a61"
-version = "1.1.42+0"
+version = "1.24.0+0"
 
 [[deps.XZ_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "15e637a697345f6743674f1322beefbc5dcd5cfc"
+git-tree-sha1 = "9cce64c0fdd1960b597ba7ecda2950b5ed957438"
 uuid = "ffd25f8a-64ca-5728-b0f7-c24cf3aae800"
-version = "5.6.3+2"
+version = "5.8.2+0"
 
 [[deps.Xorg_libICE_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "326b4fea307b0b39892b3e85fa451692eda8d46c"
+git-tree-sha1 = "a3ea76ee3f4facd7a64684f9af25310825ee3668"
 uuid = "f67eecfb-183a-506d-b269-f58e52b52d7c"
-version = "1.1.1+0"
+version = "1.1.2+0"
 
 [[deps.Xorg_libSM_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libICE_jll"]
-git-tree-sha1 = "3796722887072218eabafb494a13c963209754ce"
+git-tree-sha1 = "9c7ad99c629a44f81e7799eb05ec2746abb5d588"
 uuid = "c834827a-8449-5923-a945-d239c165b7dd"
-version = "1.2.4+0"
+version = "1.2.6+0"
 
 [[deps.Xorg_libX11_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libxcb_jll", "Xorg_xtrans_jll"]
-git-tree-sha1 = "9dafcee1d24c4f024e7edc92603cedba72118283"
+git-tree-sha1 = "b5899b25d17bf1889d25906fb9deed5da0c15b3b"
 uuid = "4f6342f7-b3d2-589e-9d20-edeb45f2b2bc"
-version = "1.8.6+3"
+version = "1.8.12+0"
 
 [[deps.Xorg_libXau_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "2b0e27d52ec9d8d483e2ca0b72b3cb1a8df5c27a"
+git-tree-sha1 = "aa1261ebbac3ccc8d16558ae6799524c450ed16b"
 uuid = "0c0b7dd1-d40b-584c-a123-a41640f87eec"
-version = "1.0.11+3"
+version = "1.0.13+0"
 
 [[deps.Xorg_libXcursor_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libXfixes_jll", "Xorg_libXrender_jll"]
-git-tree-sha1 = "807c226eaf3651e7b2c468f687ac788291f9a89b"
+git-tree-sha1 = "6c74ca84bbabc18c4547014765d194ff0b4dc9da"
 uuid = "935fb764-8cf2-53bf-bb30-45bb1f8bf724"
-version = "1.2.3+0"
+version = "1.2.4+0"
 
 [[deps.Xorg_libXdmcp_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "02054ee01980c90297412e4c809c8694d7323af3"
+git-tree-sha1 = "52858d64353db33a56e13c341d7bf44cd0d7b309"
 uuid = "a3789734-cfe1-5b06-b2d0-1dd0d9d62d05"
-version = "1.1.4+3"
+version = "1.1.6+0"
 
 [[deps.Xorg_libXext_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libX11_jll"]
-git-tree-sha1 = "d7155fea91a4123ef59f42c4afb5ab3b4ca95058"
+git-tree-sha1 = "a4c0ee07ad36bf8bbce1c3bb52d21fb1e0b987fb"
 uuid = "1082639a-0dae-5f34-9b06-72781eeb8cb3"
-version = "1.3.6+3"
+version = "1.3.7+0"
 
 [[deps.Xorg_libXfixes_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libX11_jll"]
-git-tree-sha1 = "6fcc21d5aea1a0b7cce6cab3e62246abd1949b86"
+git-tree-sha1 = "75e00946e43621e09d431d9b95818ee751e6b2ef"
 uuid = "d091e8ba-531a-589c-9de9-94069b037ed8"
-version = "6.0.0+0"
+version = "6.0.2+0"
 
 [[deps.Xorg_libXi_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libXext_jll", "Xorg_libXfixes_jll"]
-git-tree-sha1 = "984b313b049c89739075b8e2a94407076de17449"
+git-tree-sha1 = "a376af5c7ae60d29825164db40787f15c80c7c54"
 uuid = "a51aa0fd-4e3c-5386-b890-e753decda492"
-version = "1.8.2+0"
+version = "1.8.3+0"
 
 [[deps.Xorg_libXinerama_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libXext_jll"]
-git-tree-sha1 = "a1a7eaf6c3b5b05cb903e35e8372049b107ac729"
+git-tree-sha1 = "a5bc75478d323358a90dc36766f3c99ba7feb024"
 uuid = "d1454406-59df-5ea1-beac-c340f2130bc3"
-version = "1.1.5+0"
+version = "1.1.6+0"
 
 [[deps.Xorg_libXrandr_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libXext_jll", "Xorg_libXrender_jll"]
-git-tree-sha1 = "b6f664b7b2f6a39689d822a6300b14df4668f0f4"
+git-tree-sha1 = "aff463c82a773cb86061bce8d53a0d976854923e"
 uuid = "ec84b674-ba8e-5d96-8ba1-2a689ba10484"
-version = "1.5.4+0"
+version = "1.5.5+0"
 
 [[deps.Xorg_libXrender_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libX11_jll"]
-git-tree-sha1 = "a490c6212a0e90d2d55111ac956f7c4fa9c277a6"
+git-tree-sha1 = "7ed9347888fac59a618302ee38216dd0379c480d"
 uuid = "ea2f1a96-1ddc-540d-b46f-429655e07cfa"
-version = "0.9.11+1"
-
-[[deps.Xorg_libpthread_stubs_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "fee57a273563e273f0f53275101cd41a8153517a"
-uuid = "14d82f49-176c-5ed1-bb49-ad3f5cbd8c74"
-version = "0.1.1+3"
+version = "0.9.12+0"
 
 [[deps.Xorg_libxcb_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "XSLT_jll", "Xorg_libXau_jll", "Xorg_libXdmcp_jll", "Xorg_libpthread_stubs_jll"]
-git-tree-sha1 = "1a74296303b6524a0472a8cb12d3d87a78eb3612"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libXau_jll", "Xorg_libXdmcp_jll"]
+git-tree-sha1 = "bfcaf7ec088eaba362093393fe11aa141fa15422"
 uuid = "c7cfdc94-dc32-55de-ac96-5a1b8d977c5b"
-version = "1.17.0+3"
+version = "1.17.1+0"
 
 [[deps.Xorg_libxkbfile_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libX11_jll"]
-git-tree-sha1 = "dbc53e4cf7701c6c7047c51e17d6e64df55dca94"
+git-tree-sha1 = "e3150c7400c41e207012b41659591f083f3ef795"
 uuid = "cc61e674-0454-545c-8b26-ed2c68acab7a"
-version = "1.1.2+1"
+version = "1.1.3+0"
 
 [[deps.Xorg_xcb_util_cursor_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_jll", "Xorg_xcb_util_renderutil_jll"]
-git-tree-sha1 = "04341cb870f29dcd5e39055f895c39d016e18ccd"
+git-tree-sha1 = "9750dc53819eba4e9a20be42349a6d3b86c7cdf8"
 uuid = "e920d4aa-a673-5f3a-b3d7-f755a4d47c43"
-version = "0.1.4+0"
+version = "0.1.6+0"
 
 [[deps.Xorg_xcb_util_image_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Xorg_xcb_util_jll"]
-git-tree-sha1 = "0fab0a40349ba1cba2c1da699243396ff8e94b97"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_xcb_util_jll"]
+git-tree-sha1 = "f4fc02e384b74418679983a97385644b67e1263b"
 uuid = "12413925-8142-5f55-bb0e-6d7ca50bb09b"
-version = "0.4.0+1"
+version = "0.4.1+0"
 
 [[deps.Xorg_xcb_util_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Xorg_libxcb_jll"]
-git-tree-sha1 = "e7fd7b2881fa2eaa72717420894d3938177862d1"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libxcb_jll"]
+git-tree-sha1 = "68da27247e7d8d8dafd1fcf0c3654ad6506f5f97"
 uuid = "2def613f-5ad1-5310-b15b-b15d46f528f5"
-version = "0.4.0+1"
+version = "0.4.1+0"
 
 [[deps.Xorg_xcb_util_keysyms_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Xorg_xcb_util_jll"]
-git-tree-sha1 = "d1151e2c45a544f32441a567d1690e701ec89b00"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_xcb_util_jll"]
+git-tree-sha1 = "44ec54b0e2acd408b0fb361e1e9244c60c9c3dd4"
 uuid = "975044d2-76e6-5fbe-bf08-97ce7c6574c7"
-version = "0.4.0+1"
+version = "0.4.1+0"
 
 [[deps.Xorg_xcb_util_renderutil_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Xorg_xcb_util_jll"]
-git-tree-sha1 = "dfd7a8f38d4613b6a575253b3174dd991ca6183e"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_xcb_util_jll"]
+git-tree-sha1 = "5b0263b6d080716a02544c55fdff2c8d7f9a16a0"
 uuid = "0d47668e-0667-5a69-a72c-f761630bfb7e"
-version = "0.3.9+1"
+version = "0.3.10+0"
 
 [[deps.Xorg_xcb_util_wm_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Xorg_xcb_util_jll"]
-git-tree-sha1 = "e78d10aab01a4a154142c5006ed44fd9e8e31b67"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_xcb_util_jll"]
+git-tree-sha1 = "f233c83cad1fa0e70b7771e0e21b061a116f2763"
 uuid = "c22f9ab0-d5fe-5066-847c-f4bb1cd4e361"
-version = "0.4.1+1"
+version = "0.4.2+0"
 
 [[deps.Xorg_xkbcomp_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libxkbfile_jll"]
-git-tree-sha1 = "ab2221d309eda71020cdda67a973aa582aa85d69"
+git-tree-sha1 = "801a858fc9fb90c11ffddee1801bb06a738bda9b"
 uuid = "35661453-b289-5fab-8a00-3d9160c6a3a4"
-version = "1.4.6+1"
+version = "1.4.7+0"
 
 [[deps.Xorg_xkeyboard_config_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_xkbcomp_jll"]
-git-tree-sha1 = "691634e5453ad362044e2ad653e79f3ee3bb98c3"
+git-tree-sha1 = "00af7ebdc563c9217ecc67776d1bbf037dbcebf4"
 uuid = "33bec58e-1273-512f-9401-5d533626f822"
-version = "2.39.0+0"
+version = "2.44.0+0"
 
 [[deps.Xorg_xtrans_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "b9ead2d2bdb27330545eb14234a2e300da61232e"
+git-tree-sha1 = "a63799ff68005991f9d9491b6e95bd3478d783cb"
 uuid = "c5fb5394-a638-5e4d-96e5-b29de1b5cf10"
-version = "1.5.0+3"
+version = "1.6.0+0"
 
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
@@ -1614,39 +1815,33 @@ version = "1.3.1+2"
 
 [[deps.Zstd_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "555d1076590a6cc2fdee2ef1469451f872d8b41b"
+git-tree-sha1 = "446b23e73536f84e8037f5dce465e92275f6a308"
 uuid = "3161d3a3-bdf6-5164-811a-617609db77b4"
-version = "1.5.6+3"
+version = "1.5.7+1"
 
 [[deps.eudev_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "gperf_jll"]
-git-tree-sha1 = "431b678a28ebb559d224c0b6b6d01afce87c51ba"
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "c3b0e6196d50eab0c5ed34021aaa0bb463489510"
 uuid = "35ca27e7-8b34-5b7f-bca9-bdc33f59eb06"
-version = "3.2.9+0"
+version = "3.2.14+0"
 
 [[deps.fzf_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "6e50f145003024df4f5cb96c7fce79466741d601"
+git-tree-sha1 = "b6a34e0e0960190ac2a4363a1bd003504772d631"
 uuid = "214eeab7-80f7-51ab-84ad-2988db7cef09"
-version = "0.56.3+0"
-
-[[deps.gperf_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "0ba42241cb6809f1a278d0bcb976e0483c3f1f2d"
-uuid = "1a1c6b14-54f6-533d-8383-74cd7377aa70"
-version = "3.1.1+1"
+version = "0.61.1+0"
 
 [[deps.libaom_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "1827acba325fdcdf1d2647fc8d5301dd9ba43a9d"
+git-tree-sha1 = "371cc681c00a3ccc3fbc5c0fb91f58ba9bec1ecf"
 uuid = "a4ae2306-e953-59d6-aa16-d00cac43593b"
-version = "3.9.0+0"
+version = "3.13.1+0"
 
 [[deps.libass_jll]]
 deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "HarfBuzz_jll", "JLLWrappers", "Libdl", "Zlib_jll"]
-git-tree-sha1 = "e17c115d55c5fbb7e52ebedb427a0dca79d4484e"
+git-tree-sha1 = "125eedcb0a4a0bba65b657251ce1d27c8714e9d6"
 uuid = "0ac62f75-1d6f-5e53-bd7c-93b484bb37c0"
-version = "0.15.2+0"
+version = "0.17.4+0"
 
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1660,40 +1855,40 @@ uuid = "1183f4f0-6f2a-5f1a-908b-139f9cdfea6f"
 version = "0.2.2+0"
 
 [[deps.libevdev_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "141fe65dc3efabb0b1d5ba74e91f6ad26f84cc22"
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "56d643b57b188d30cccc25e331d416d3d358e557"
 uuid = "2db6ffa8-e38f-5e21-84af-90c45d0032cc"
-version = "1.11.0+0"
+version = "1.13.4+0"
 
 [[deps.libfdk_aac_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "8a22cf860a7d27e4f3498a0fe0811a7957badb38"
+git-tree-sha1 = "646634dd19587a56ee2f1199563ec056c5f228df"
 uuid = "f638f0a6-7fb0-5443-88ba-1cc74229b280"
-version = "2.0.3+0"
+version = "2.0.4+0"
 
 [[deps.libinput_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "eudev_jll", "libevdev_jll", "mtdev_jll"]
-git-tree-sha1 = "ad50e5b90f222cfe78aa3d5183a20a12de1322ce"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "eudev_jll", "libevdev_jll", "mtdev_jll"]
+git-tree-sha1 = "91d05d7f4a9f67205bd6cf395e488009fe85b499"
 uuid = "36db933b-70db-51c0-b978-0f229ee0e533"
-version = "1.18.0+0"
+version = "1.28.1+0"
 
 [[deps.libpng_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Zlib_jll"]
-git-tree-sha1 = "b70c870239dc3d7bc094eb2d6be9b73d27bef280"
+git-tree-sha1 = "de8ab4f01cb2d8b41702bab9eaad9e8b7d352f73"
 uuid = "b53b4c65-9356-5827-b1ea-8c7a1a84506f"
-version = "1.6.44+2"
+version = "1.6.53+0"
 
 [[deps.libvorbis_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Ogg_jll", "Pkg"]
-git-tree-sha1 = "490376214c4721cdaca654041f635213c6165cb3"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Ogg_jll"]
+git-tree-sha1 = "11e1772e7f3cc987e9d3de991dd4f6b2602663a5"
 uuid = "f27f6e37-5d2b-51aa-960f-b287f2bc3b7a"
-version = "1.3.7+2"
+version = "1.3.8+0"
 
 [[deps.mtdev_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "814e154bdb7be91d78b6802843f76b6ece642f11"
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "b4d631fd51f2e9cdd93724ae25b2efc198b059b1"
 uuid = "009596ad-96f7-51b1-9f1b-5ce2d5e8a71e"
-version = "1.1.6+0"
+version = "1.1.7+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1706,48 +1901,62 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 version = "17.7.0+0"
 
 [[deps.x264_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "4fea590b89e6ec504593146bf8b988b2c00922b2"
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "14cc7083fc6dff3cc44f2bc435ee96d06ed79aa7"
 uuid = "1270edf5-f2f9-52d2-97e9-ab00b5d0237a"
-version = "2021.5.5+0"
+version = "10164.0.1+0"
 
 [[deps.x265_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "ee567a171cce03570d77ad3a43e90218e38937a9"
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "e7b67590c14d487e734dcb925924c5dc43ec85f3"
 uuid = "dfaa095f-4041-5dcd-9319-2fabd8486b76"
-version = "3.5.0+0"
+version = "4.1.0+0"
 
 [[deps.xkbcommon_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Wayland_jll", "Wayland_protocols_jll", "Xorg_libxcb_jll", "Xorg_xkeyboard_config_jll"]
-git-tree-sha1 = "63406453ed9b33a0df95d570816d5366c92b7809"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libxcb_jll", "Xorg_xkeyboard_config_jll"]
+git-tree-sha1 = "a1fc6507a40bf504527d0d4067d718f8e179b2b8"
 uuid = "d8fb68d0-12a3-5cfd-a85a-d49703b185fd"
-version = "1.4.1+2"
+version = "1.13.0+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─b2ec9c30-1fb8-46db-a7d8-bedcef046e98
 # ╟─f1b83e66-be2e-11ef-33ae-7f3ad5680ea5
 # ╟─81e3bcad-e58b-47cd-994e-f00d4252e66a
 # ╟─b2af872b-8983-4d8f-b2a1-177ee964f21c
-# ╠═88617a2b-1f60-4f4b-9e7c-8b716e67831b
-# ╠═5b4eb235-2342-4b66-8110-1f33f4a5a2b1
-# ╠═68004822-b2b3-47e6-9ed1-0bc75316cdca
-# ╠═dd22223f-0212-4f27-a383-3df2eea99ad3
-# ╠═1c4f2968-c4cb-4183-a1d9-0382202fc8c6
-# ╠═202d247c-8f3c-47f0-951f-9cb26cfa44ca
+# ╟─5b4eb235-2342-4b66-8110-1f33f4a5a2b1
+# ╟─357468ee-0440-4f0c-be34-3e64da57c047
+# ╟─1c2909ab-e6ae-4da5-bc58-0d34fbcfd755
+# ╟─cbb9403c-4b92-4389-9a0d-9be5da654e48
+# ╠═e5153d19-9d42-433c-b440-0ecb84e6b879
+# ╟─e09afb18-9c76-4046-aa0b-382c36f8cc56
+# ╟─68004822-b2b3-47e6-9ed1-0bc75316cdca
+# ╟─dd22223f-0212-4f27-a383-3df2eea99ad3
+# ╟─9a755abc-a4d5-4f7c-9655-ec302aab19e2
+# ╟─fed3d5cf-acce-48e9-b51b-03829d5a643d
+# ╟─7219e946-d79e-43c0-b1a3-d9d9619b5aa5
+# ╟─1c4f2968-c4cb-4183-a1d9-0382202fc8c6
 # ╟─6097a067-c38b-4e0e-be6f-e5341dd818f2
-# ╟─b83d7ff7-c911-4e42-ba57-469fe8d7a55a
-# ╟─3bbc2db0-c047-4a97-b81e-181f3b7b50a3
-# ╟─69d02369-9e4f-415b-b172-a6bb08fc829e
+# ╠═b83d7ff7-c911-4e42-ba57-469fe8d7a55a
+# ╠═69d02369-9e4f-415b-b172-a6bb08fc829e
 # ╟─13252efa-b2ff-451e-b2cc-83393a0a85b8
 # ╟─de9a3400-d6b5-4dc5-94aa-782c1e5e3d8f
-# ╟─494ea233-6d5c-4351-a934-84d701b8ac74
+# ╠═494ea233-6d5c-4351-a934-84d701b8ac74
 # ╟─9cdb35ec-ff72-4703-af92-b3792ef599dd
-# ╟─f8eef707-7719-4010-a349-f95fabaf3e52
+# ╠═f8eef707-7719-4010-a349-f95fabaf3e52
 # ╟─9ba566ef-2715-46cc-b5b1-acf4cf94446c
 # ╟─31582d78-4a98-47de-b631-eed3f2d6c5c1
 # ╠═8c344bd3-9d3b-4fcc-a39f-e3cdc25aa68d
 # ╠═0a60200e-4faa-411f-8a10-893ea87b7027
+# ╟─d0db2565-0624-4db3-8382-27e960fa2cdf
+# ╟─e6541b15-97b4-430e-8186-a5527769c509
+# ╠═ff4167e5-dcdd-4db6-93a3-fe6e9aeef073
+# ╟─bb131a21-644a-4d7d-b4a1-0b3104ac29f8
+# ╟─85fa7197-a109-4bed-8acc-661a2b5257d0
+# ╟─09ff129f-f261-44a9-8ba2-de656d61b60a
+# ╟─3a93c488-0db0-4921-9561-449ed92ce109
+# ╟─50de5752-d317-4402-9cbd-6e39ccb5a343
+# ╟─1de51a39-fa06-49e1-8f74-8d79269d5442
+# ╟─56213a39-c518-4d71-bed2-9b742c8858de
 # ╟─fdbbbcb0-ec46-49c1-9248-60b24001d0e7
 # ╟─2d7a3e9b-92fa-4900-ad40-94fffd12581f
 # ╟─1596de13-534b-4caf-89d9-5bc58a34c9ba
