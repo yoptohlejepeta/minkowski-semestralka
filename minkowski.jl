@@ -2,6 +2,9 @@
 # v0.20.21
 
 #> [frontmatter]
+#> source_url = "https://github.com/yoptohlejepeta/minkowski-semestralka"
+#> image = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/%D0%A1%D1%83%D0%BC%D0%BC%D0%B0_%D0%9C%D0%B8%D0%BD%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%BE%D0%B3%D0%BE.svg/500px-%D0%A1%D1%83%D0%BC%D0%BC%D0%B0_%D0%9C%D0%B8%D0%BD%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%BE%D0%B3%D0%BE.svg.png"
+#> language = "cs"
 #> title = "Minkowského suma a její uplatnění"
 #> 
 #>     [[frontmatter.author]]
@@ -66,7 +69,7 @@ md"""
 !!! info "Časová složitost první metody"
 	První krok má časovou složitost $O(|A||B|)$, kde $|A|$ a $|B|$ je počet hran polygonu $A$, resp. polygonu $B$.
 
-	Časová složitost druhého korku závisí na použitém algoritmu k nalezení knvexní obálky. V tomto dokumentu je to $O(|A||B|$ log$(|A||B|))$.
+	Časová složitost druhého kroku závisí na použitém algoritmu k nalezení konvexní obálky. V tomto dokumentu je to $O(|A||B|$ log$(|A||B|))$.
 
 """
 
@@ -74,22 +77,20 @@ md"""
 md"""
 __Metoda 2__:
 
-Vstupem jsou polygony $A$,$B$, jejichž hrany jsou seřazeny proti směru hodinových ručiček. $C$ označujeme Minkowského sumu těchto polygonů, tvořenou souřadnicemi vrcholů. Vrcholy polygonů $A$,$B$ je nutné přerovnat tak, aby prvním vrcholem byl vrchol s nejmenší $y$-ovou souřadnicí (při rovnosti s nejmenší $x$-ovou). Takto jsou vrcholy seřazené podle polárního úhlu.
+Vstupem jsou polygony $A$,$B$, jejichž hrany jsou seřazeny proti směru hodinových ručiček. $C$ označujeme Minkowského sumu těchto polygonů, tvořenou souřadnicemi vrcholů. Vrcholy polygonů $A$,$B$ je nutné přeuspořádat tak, aby prvním vrcholem byl vrchol s nejmenší $y$-ovou souřadnicí (při rovnosti s nejmenší $x$-ovou). Takto jsou vrcholy seřazené podle polárního úhlu.
 
 Inicializujeme ukazatele $i$ a $j$, na začátku oba rovny $1$ ($i=j=1$). Opakujeme následující kroky, dokud neprojdeme všechny vrcholy obou polygonů.
 
-1. Přidej $A_i + B_i$ do $C$.
-1. Porovnej polární úhly ``\alpha=\overrightarrow{A_iA_{i+1}}`` a ``\beta=\overrightarrow{B_iB_{j+1}}``.
-   - Pokud ``\alpha>\beta``: $i+1$
-   - Pokud ``\alpha<\beta``: $j+1$
-   - Jinak: $i+1$, $j+1$
+1. Přidej $A_i + B_j$ do $C$.
+1. Porovnej polární úhly ``\overrightarrow{A_iA_{i+1}}``, označíme ``\alpha``, a  ``\overrightarrow{B_jB_{j+1}}``, označíme ``\beta``.
+   - Pokud ``\alpha<\beta``: inkrementuj $i$
+   - Pokud ``\alpha>\beta``: inkrementuj $j$
+   - Jinak: inkrementuj $i$, inkrementuj $j$
 
 Výsledkem je seznam vrcholů polygonu $C$, který je Minkowského sumou polygonů $A$ a $B$. 
 
 
 """
-# 3.  **Výsledek**:
-#     * Výsledkem je seznam vrcholů konvexního polygonu, který již nevyžaduje další volání funkce pro konvexní obal, protože pořadí bodů je přirozeně zachováno díky řazení podle úhlů.
 
 # ╔═╡ cbb9403c-4b92-4389-9a0d-9be5da654e48
 md"""
@@ -271,14 +272,8 @@ function minkowski2(polygon1, polygon2)
 	while i <= n && j <= m
 		push!(pq, polygon1[i] .+ polygon2[j])
 
-		Vp1 = (
-			polygon1[mod(i, n) + 1][1] - polygon1[i][1],
-			polygon1[mod(i, n) + 1][2] - polygon1[i][2]
-		)
-		Vp2 = (
-			polygon2[mod(j, m) + 1][1] - polygon2[j][1],
-			polygon2[mod(j, m) + 1][2] - polygon2[j][2]
-		)
+		Vp1 = polygon1[mod(i, n) + 1] .- polygon1[i]		
+		Vp2 = polygon2[mod(j, m) + 1] .- polygon2[j]
 
 		p1_angle = angle(Vp1...)
 		p2_angle = angle(Vp2...)
@@ -311,14 +306,8 @@ function minkowski2(polygon1, polygon2)
 	while i <= n && j <= m
 		push!(pq, polygon1[i] .+ polygon2[j])
 
-		Vp1 = (
-			polygon1[mod(i, n) + 1][1] - polygon1[i][1],
-			polygon1[mod(i, n) + 1][2] - polygon1[i][2]
-		)
-		Vp2 = (
-			polygon2[mod(j, m) + 1][1] - polygon2[j][1],
-			polygon2[mod(j, m) + 1][2] - polygon2[j][2]
-		)
+		Vp1 = polygon1[mod(i, n) + 1] .- polygon1[i]		
+		Vp2 = polygon2[mod(j, m) + 1] .- polygon2[j]
 
 		p1_angle = angle(Vp1...)
 		p2_angle = angle(Vp2...)
@@ -557,7 +546,7 @@ md"""
 1. MAREŠ, Martin a VALLA, Tomáš. _Průvodce labyrintem algoritmů_. Druhé vydání. CZ.NIC. Praha: CZ.NIC, z.s.p.o., 2022. ISBN 9788088168638.
 1. BEKKER, Henk a JOS B. T. M. ROERDINK. An Efficient Algorithm to Calculate the Minkowski Sum of Convex 3D Polyhedra. Online. In: _Lecture notes in computer science_. 2001, s. 619-628. ISSN 0302-9743. Dostupné z: https://doi.org/10.1007/3-540-45545-0_71.
 1. Minkowski sum of convex polygons. Online. _Algorithms for Competitive Programming_. Dostupné z: [https://cp-algorithms.com/geometry/minkowski.html](https://cp-algorithms.com/geometry/minkowski.html).
-1. VONAŚEK, Vojtěch. Motion planning: basic concepts. Online. Dostupné z: [https://cw.fel.cvut.cz/b222/_media/courses/aro/lectures/2023-planning-basics.pdf](https://cw.fel.cvut.cz/b222/_media/courses/aro/lectures/2023-planning-basics.pdf).
+1. VONÁSEK, Vojtěch. Motion planning: basic concepts. Online. Dostupné z: [https://cw.fel.cvut.cz/b222/_media/courses/aro/lectures/2023-planning-basics.pdf](https://cw.fel.cvut.cz/b222/_media/courses/aro/lectures/2023-planning-basics.pdf).
 1. Wikipedia. _Minkowski addition_. Online. In: Wikipedia, The Free Encyclopedia. Dostupné z: [https://en.wikipedia.org/wiki/Minkowski_addition](https://en.wikipedia.org/wiki/Minkowski_addition).
 """
 
@@ -1927,7 +1916,7 @@ version = "1.13.0+0"
 # ╟─357468ee-0440-4f0c-be34-3e64da57c047
 # ╟─1c2909ab-e6ae-4da5-bc58-0d34fbcfd755
 # ╟─cbb9403c-4b92-4389-9a0d-9be5da654e48
-# ╠═e5153d19-9d42-433c-b440-0ecb84e6b879
+# ╟─e5153d19-9d42-433c-b440-0ecb84e6b879
 # ╟─e09afb18-9c76-4046-aa0b-382c36f8cc56
 # ╟─68004822-b2b3-47e6-9ed1-0bc75316cdca
 # ╟─dd22223f-0212-4f27-a383-3df2eea99ad3
